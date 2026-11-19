@@ -1,0 +1,34 @@
+name: Windows — compilar StormVR Server
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main, master]
+
+jobs:
+  build:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Configurar (CMake)
+        run: cmake -S . -B build -A x64
+
+      - name: Compilar (Release)
+        run: cmake --build build --config Release --parallel
+
+      - name: Montar pacote
+        if: always()
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Force -Path dist_out | Out-Null
+          if (Test-Path "build\bin\Release\stormvr_server.exe") {
+            Copy-Item "build\bin\Release\stormvr_server.exe" dist_out
+          }
+          Copy-Item dist\* dist_out -Recurse -Force
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: StormVR-Server-win64
+          path: dist_out
